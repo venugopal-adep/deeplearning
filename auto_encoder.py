@@ -31,6 +31,7 @@ def build_autoencoder(input_dim, encoding_dim):
 # Streamlit app
 def main():
     st.title("Autoencoder for Dimensionality Reduction")
+    st.write("**Developed by : Venugopal Adep**")
     st.write("This demo shows how an Autoencoder can be used for dimensionality reduction.")
 
     # Load and preprocess the data
