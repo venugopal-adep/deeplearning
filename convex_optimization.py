@@ -17,6 +17,7 @@ def plot_function(x, y, title):
 
 def main():
     st.title("Optimization Demo")
+    st.write("**Developed by : Venugopal Adep**")
     
     st.header("Convex Optimization")
     st.write("Convex optimization involves a function that has only one minimum, corresponding to the global optimum. There is no concept of local optima for convex optimization problems.")
