@@ -3,6 +3,7 @@ import plotly.graph_objects as go
 import numpy as np
 
 st.title("Gradient Descent Visualization")
+st.write("**Developed by : Venugopal Adep**")
 
 # Define the objective function
 def objective(x):
