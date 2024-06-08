@@ -26,6 +26,7 @@ def plot_activations(layer_activations, layer_name):
 
 # Streamlit app
 st.title("Forward Propagation in Neural Networks")
+st.write("**Developed by : Venugopal Adep**")
 
 # Sidebar for input parameters
 st.sidebar.header("Input Parameters")
