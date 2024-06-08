@@ -31,6 +31,7 @@ def mini_batch_gradient_descent(lr, iterations, function, derivative, initial_po
         yield x
 
 st.title('Gradient Descent Visualization Tool')
+st.write("**Developed by : Venugopal Adep**")
 
 with st.sidebar:
     method = st.selectbox('Select Gradient Descent Method', ['Batch', 'Stochastic', 'Mini-Batch'])
