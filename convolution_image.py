@@ -71,6 +71,7 @@ def get_filters():
 def main():
     st.set_page_config(page_title="Convolution Playground", layout="wide")
     st.title("Convolution Playground")
+    st.write("**Developed by : Venugopal Adep**")
     st.markdown("""
     Welcome to the Convolution Playground! This interactive tool allows you to explore and understand the concept of convolution, which is widely used in computer vision and image processing.
 
