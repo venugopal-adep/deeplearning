@@ -1,15 +1,9 @@
 import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
-import plotly.express as px
-from sklearn.ensemble import BaggingClassifier, RandomForestClassifier
-from sklearn.datasets import make_moons
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
-import pandas as pd
 
 # Custom CSS and Page Configuration
-st.set_page_config(layout="wide", page_title="Ensemble Learning Explorer", page_icon="🌳")
+st.set_page_config(layout="wide", page_title="Neural Network Forward Propagation Explorer", page_icon="🧠")
 
 st.markdown("""
 <style>
@@ -18,8 +12,8 @@ st.markdown("""
     .content-text {font-size: 1.1rem; line-height: 1.6;}
     .highlight {background-color: #E6E6FA; padding: 1rem; border-radius: 10px; margin-bottom: 1rem;}
     .interpretation {background-color: #F0E6FF; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border-left: 5px solid #8A2BE2;}
-    .quiz-question {background-color: #F0E6FF; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border-left: 5px solid #8A2BE2;}
     .explanation {background-color: #E6E6FA; padding: 0.8rem; border-radius: 5px; margin-top: 0.8rem;}
+    .quiz-question {background-color: #F0E6FF; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border-left: 5px solid #8A2BE2;}
     .stButton>button {
         background-color: #9370DB; color: white; font-size: 1rem; padding: 0.5rem 1rem;
         border: none; border-radius: 4px; cursor: pointer; transition: all 0.3s;
@@ -28,190 +22,179 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Main Application
-def main():
-    st.markdown("<h1 class='main-header'>🌳 Ensemble Learning Explorer: Bagging vs Random Forest 🌳</h1>", unsafe_allow_html=True)
-    st.markdown("<p class='content-text'><strong>Developed by: Venugopal Adep</strong></p>", unsafe_allow_html=True)
+# Helper functions
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
 
-    # Sidebar Configuration
-    configure_sidebar()
+def softmax(x):
+    exp_x = np.exp(x)
+    return exp_x / np.sum(exp_x, axis=1, keepdims=True)
 
-    # Create tabs
-    tab1, tab2, tab3, tab4 = st.tabs(["🔍 Model Visualizer", "📊 Performance Analysis", "🎓 Learning Center", "🧠 Knowledge Quiz"])
+def forward_propagation(X, hidden_weights, hidden_bias, output_weights, output_bias, activation):
+    hidden_layer = np.dot(X, hidden_weights) + hidden_bias
+    hidden_activation = activation(hidden_layer)
+    output_layer = np.dot(hidden_activation, output_weights) + output_bias
+    if activation == softmax:
+        output_activation = softmax(output_layer)
+    else:
+        output_activation = sigmoid(output_layer)
+    return hidden_activation, output_activation
 
-    with tab1:
-        model_visualizer()
-    with tab2:
-        performance_analysis()
-    with tab3:
-        learning_center()
-    with tab4:
-        knowledge_quiz()
-
-    conclusion()
-
-def configure_sidebar():
-    st.sidebar.title("Model Parameters")
-    params = {
-        'n_estimators': st.sidebar.slider("Number of Estimators", 1, 100, 10),
-        'n_samples': st.sidebar.slider("Number of Samples", 100, 1000, 500, 50),
-        'noise': st.sidebar.slider("Noise Level", 0.0, 0.5, 0.3, 0.1)
-    }
-    return params
-
-def generate_data(params):
-    X, y = make_moons(n_samples=params['n_samples'], noise=params['noise'], random_state=42)
-    return train_test_split(X, y, test_size=0.2, random_state=42)
-
-def train_models(X_train, y_train, params):
-    bagging = BaggingClassifier(n_estimators=params['n_estimators'], random_state=42)
-    rf = RandomForestClassifier(n_estimators=params['n_estimators'], random_state=42)
-    
-    bagging.fit(X_train, y_train)
-    rf.fit(X_train, y_train)
-    
-    return bagging, rf
-
-def plot_decision_boundary(clf, X, y, title):
-    x_min, x_max = X[:, 0].min() - 0.5, X[:, 0].max() + 0.5
-    y_min, y_max = X[:, 1].min() - 0.5, X[:, 1].max() + 0.5
-    xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.02), np.arange(y_min, y_max, 0.02))
-    Z = clf.predict(np.c_[xx.ravel(), yy.ravel()]).reshape(xx.shape)
-    
-    fig = go.Figure()
-    fig.add_trace(go.Contour(x=xx[0], y=yy[:, 0], z=Z, colorscale='RdBu', opacity=0.5, showscale=False, contours=dict(start=0, end=1, size=0.5)))
-    fig.add_trace(go.Scatter(x=X[:, 0], y=X[:, 1], mode='markers', marker=dict(size=10, color=y, colorscale='RdBu', line=dict(color='Black', width=1)), showlegend=False))
-    
-    fig.update_layout(title=title, xaxis_title='Feature 1', yaxis_title='Feature 2', width=700, height=600, autosize=False, margin=dict(l=50, r=50, b=50, t=50, pad=4))
+def plot_activations(layer_activations, layer_name):
+    fig = go.Figure(data=[go.Bar(x=list(range(len(layer_activations[0]))), y=layer_activations[0])])
+    fig.update_layout(title=f"{layer_name} Activations", xaxis_title="Neuron", yaxis_title="Activation")
     return fig
 
-def model_visualizer():
-    st.markdown("<h2 class='sub-header'>Model Visualization</h2>", unsafe_allow_html=True)
+# Initialize session state
+if 'params' not in st.session_state:
+    st.session_state.params = {
+        'num_features': 5,
+        'num_hidden_neurons': 5,
+        'num_output_neurons': 2,
+        'activation_func': "Sigmoid"
+    }
+
+def configure_sidebar():
+    st.sidebar.header("Input Parameters")
+    st.session_state.params['num_features'] = st.sidebar.slider("Number of Input Features", 1, 10, st.session_state.params['num_features'])
+    st.session_state.params['num_hidden_neurons'] = st.sidebar.slider("Number of Hidden Neurons", 1, 10, st.session_state.params['num_hidden_neurons'])
+    st.session_state.params['num_output_neurons'] = st.sidebar.slider("Number of Output Neurons", 1, 10, st.session_state.params['num_output_neurons'])
+    st.session_state.params['activation_func'] = st.sidebar.selectbox("Activation Function", ("Sigmoid", "Softmax"))
+
+def generate_network_data():
+    X = np.random.randn(1, st.session_state.params['num_features'])
+    hidden_weights = np.random.randn(st.session_state.params['num_features'], st.session_state.params['num_hidden_neurons'])
+    hidden_bias = np.random.randn(1, st.session_state.params['num_hidden_neurons'])
+    output_weights = np.random.randn(st.session_state.params['num_hidden_neurons'], st.session_state.params['num_output_neurons'])
+    output_bias = np.random.randn(1, st.session_state.params['num_output_neurons'])
+    return X, hidden_weights, hidden_bias, output_weights, output_bias
+
+def network_visualization():
+    st.markdown("<h2 class='sub-header'>Network Visualization</h2>", unsafe_allow_html=True)
+
+    X, hidden_weights, hidden_bias, output_weights, output_bias = generate_network_data()
     
-    params = configure_sidebar()
-    X_train, X_test, y_train, y_test = generate_data(params)
-    bagging, rf = train_models(X_train, y_train, params)
-    
-    bagging_accuracy = accuracy_score(y_test, bagging.predict(X_test))
-    rf_accuracy = accuracy_score(y_test, rf.predict(X_test))
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        st.plotly_chart(plot_decision_boundary(bagging, X_train, y_train, f"Bagging (Accuracy: {bagging_accuracy:.2f})"), use_container_width=True)
-    with col2:
-        st.plotly_chart(plot_decision_boundary(rf, X_train, y_train, f"Random Forest (Accuracy: {rf_accuracy:.2f})"), use_container_width=True)
-    
-    st.markdown("<div class='interpretation'>", unsafe_allow_html=True)
-    st.markdown("""
-    <p class='content-text'>
-    <strong>Interpretation:</strong>
-    - Colored regions represent decision boundaries for class separation.
-    - Circles are data points, with colors indicating their true class.
-    - More complex boundaries suggest higher model flexibility.
-    - Increasing estimators typically smooths decision boundaries.
-    - Random Forest often outperforms Bagging due to feature subsampling.
-    - Accuracy scores quantify model performance on the test set.
-    </p>
-    """, unsafe_allow_html=True)
+    activation = sigmoid if st.session_state.params['activation_func'] == "Sigmoid" else softmax
+    hidden_activation, output_activation = forward_propagation(X, hidden_weights, hidden_bias, output_weights, output_bias, activation)
+
+    st.markdown("<div class='highlight'>", unsafe_allow_html=True)
+    st.subheader("Input Features")
+    st.write(X)
     st.markdown("</div>", unsafe_allow_html=True)
 
-def performance_analysis():
-    st.markdown("<h2 class='sub-header'>Model Performance Comparison</h2>", unsafe_allow_html=True)
-    
-    params = configure_sidebar()
-    X_train, X_test, y_train, y_test = generate_data(params)
-    bagging, rf = train_models(X_train, y_train, params)
-    
-    bagging_accuracy = accuracy_score(y_test, bagging.predict(X_test))
-    rf_accuracy = accuracy_score(y_test, rf.predict(X_test))
-    
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown("<div class='highlight'>", unsafe_allow_html=True)
-        st.markdown(f"<h3 class='content-text'>Bagging Accuracy: {bagging_accuracy:.3f}</h3>", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+        st.plotly_chart(plot_activations(hidden_activation, "Hidden Layer"), use_container_width=True)
     with col2:
-        st.markdown("<div class='highlight'>", unsafe_allow_html=True)
-        st.markdown(f"<h3 class='content-text'>Random Forest Accuracy: {rf_accuracy:.3f}</h3>", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-    
-    accuracy_data = pd.DataFrame({'Model': ['Bagging', 'Random Forest'], 'Accuracy': [bagging_accuracy, rf_accuracy]})
-    fig = px.bar(accuracy_data, x='Model', y='Accuracy', title='Model Accuracy Comparison', color='Model', color_discrete_map={'Bagging': '#9370DB', 'Random Forest': '#8A2BE2'})
-    st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(plot_activations(output_activation, "Output Layer"), use_container_width=True)
+
+    return X, hidden_weights, hidden_bias, output_weights, output_bias, hidden_activation, output_activation
+
+def forward_propagation_calculations(X, hidden_weights, hidden_bias, output_weights, output_bias, hidden_activation, output_activation):
+    st.markdown("<h2 class='sub-header'>Forward Propagation Calculations</h2>", unsafe_allow_html=True)
+
+    st.write("Input Features (X):")
+    st.write(X)
+
+    st.write("Hidden Layer Weights (W1):")
+    st.write(hidden_weights)
+
+    st.write("Hidden Layer Bias (b1):")
+    st.write(hidden_bias)
+
+    st.write("Output Layer Weights (W2):")
+    st.write(output_weights)
+
+    st.write("Output Layer Bias (b2):")
+    st.write(output_bias)
+
+    st.write("Step 1: Calculate the weighted sum of inputs for the hidden layer (z1)")
+    z1 = np.dot(X, hidden_weights) + hidden_bias
+    st.write("z1 = X · W1 + b1")
+    st.write(z1)
+
+    st.write("Step 2: Apply the activation function to the weighted sum (a1)")
+    st.write(f"a1 = {st.session_state.params['activation_func']}(z1)")
+    st.write(hidden_activation)
+
+    st.write("Step 3: Calculate the weighted sum of inputs for the output layer (z2)")
+    z2 = np.dot(hidden_activation, output_weights) + output_bias
+    st.write("z2 = a1 · W2 + b2")
+    st.write(z2)
+
+    st.write("Step 4: Apply the activation function to the weighted sum (a2)")
+    st.write(f"a2 = {st.session_state.params['activation_func']}(z2)")
+    st.write(output_activation)
 
 def learning_center():
-    st.markdown("<h2 class='sub-header'>Ensemble Learning: Bagging and Random Forest</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 class='sub-header'>Forward Propagation Explained</h2>", unsafe_allow_html=True)
     
     st.markdown("""
     <p class='content-text'>
-    Bagging (Bootstrap Aggregating) and Random Forest are ensemble learning methods that combine multiple decision trees to enhance prediction accuracy and mitigate overfitting.
+    Forward propagation is the process of passing the input data through the neural network to obtain the predicted output.
+    At each layer, the input data is transformed using the weights and biases, and an activation function is applied to introduce non-linearity.
+    The last layer produces the final output of the network, which can be used for prediction or classification.
 
-    <h3>Bagging:</h3>
-    - Creates multiple subsets of the training data through bootstrap sampling.
-    - Trains independent decision trees on each subset.
-    - Aggregates predictions (majority voting for classification, averaging for regression).
+    <h3>Steps in Forward Propagation:</h3>
+    1. The input data is multiplied by the weights of the first layer and the bias is added.
+    2. An activation function (e.g., sigmoid or softmax) is applied to the sum.
+    3. The result is passed as input to the next layer, and steps 1-2 are repeated until the final layer.
+    4. The output of the last layer gives the predictions of the neural network.
 
-    <h3>Random Forest:</h3>
-    - Extends bagging by introducing feature subsampling at each tree split.
-    - Reduces correlation between trees and improves ensemble diversity.
-
-    <h3>Key Differences:</h3>
-    1. Feature Selection: Bagging uses all features; Random Forest selects random feature subsets.
-    2. Diversity: Random Forest achieves greater tree diversity due to feature subsampling.
-    3. Performance: Random Forest often outperforms Bagging, especially on high-dimensional datasets.
-    4. Interpretability: Both are less interpretable than single trees, but Random Forest provides feature importance measures.
-
-    Experiment with the interactive demo to observe how these models behave with different parameters!
+    <h3>Example:</h3>
+    In this demo, we randomly generate input data and weights for a simple neural network with one hidden layer.
+    You can adjust the number of input features, hidden neurons, output neurons, and the activation function using the sidebar controls.
+    The activations of the hidden layer and output layer are visualized using bar plots, where each bar represents the activation of a neuron in that layer.
     </p>
     """, unsafe_allow_html=True)
 
-def knowledge_quiz():
+def quiz():
     st.markdown("<h2 class='sub-header'>Test Your Knowledge 🧠</h2>", unsafe_allow_html=True)
     
     questions = [
         {
-            "question": "What key feature distinguishes Random Forest from Bagging?",
+            "question": "What is the main purpose of forward propagation in a neural network?",
             "options": [
-                "Use of decision trees",
-                "Feature subsampling at each split",
-                "Exclusive use in classification tasks",
-                "Implementation of boosting"
+                "To update the weights of the network",
+                "To pass input data through the network and get predictions",
+                "To calculate the error of the network",
+                "To train the neural network"
             ],
             "correct": 1,
-            "explanation": "Random Forest introduces additional randomness through feature subsampling at each split, while Bagging uses all features."
+            "explanation": "Forward propagation is like sending a message through a chain of people. Each person (neuron) receives the message, modifies it slightly, and passes it on. The final person gives us the network's prediction or output."
         },
         {
-            "question": "What does 'bootstrap' mean in the context of Bagging?",
+            "question": "What does an activation function do in a neural network?",
             "options": [
-                "Model parameter initialization",
-                "Feature scaling technique",
-                "Random sampling with replacement",
-                "Decision tree pruning method"
+                "It determines the learning rate of the network",
+                "It initializes the weights of the network",
+                "It introduces non-linearity to the network",
+                "It calculates the loss of the network"
             ],
             "correct": 2,
-            "explanation": "In Bagging, 'bootstrap' refers to creating multiple training data subsets through random sampling with replacement."
+            "explanation": "An activation function is like a decision-maker in each neuron. It looks at the input and decides how strongly to fire, adding non-linearity. For example, the sigmoid function squishes any input into a value between 0 and 1, like deciding how much to turn on a dimmer switch."
         },
         {
-            "question": "How do Bagging and Random Forest typically compare in performance?",
+            "question": "In the context of neural networks, what is a 'layer'?",
             "options": [
-                "Bagging consistently outperforms Random Forest",
-                "Random Forest often excels, especially with high-dimensional data",
-                "They always perform identically",
-                "Bagging is superior for small datasets, Random Forest for large ones"
+                "A group of neurons that process information together",
+                "The process of updating weights",
+                "The final output of the network",
+                "The input data to the network"
             ],
-            "correct": 1,
-            "explanation": "Random Forest often outperforms Bagging, particularly on high-dimensional datasets, due to the added randomness from feature subsampling."
+            "correct": 0,
+            "explanation": "A layer in a neural network is like a team of workers in an assembly line. Each worker (neuron) in the team processes some information and passes it to the next team. For instance, in an image recognition network, one layer might detect edges, the next shapes, and so on."
         },
         {
-            "question": "How does increasing the number of estimators (trees) affect the decision boundary?",
+            "question": "What's the difference between the hidden layer and the output layer?",
             "options": [
-                "It becomes more complex and irregular",
-                "It becomes smoother and more stable",
-                "It remains unchanged",
-                "It always becomes linear"
+                "Hidden layers use activation functions, output layers don't",
+                "Hidden layers process intermediate features, output layer gives final predictions",
+                "Hidden layers have weights, output layers don't",
+                "There is no difference, they function the same way"
             ],
             "correct": 1,
-            "explanation": "As the number of estimators increases, decision boundaries typically become smoother and more stable due to the aggregation of multiple trees' predictions."
+            "explanation": "Think of a hidden layer as the behind-the-scenes work in a detective agency. They gather and process clues (features). The output layer is like the detective presenting the final conclusion. For example, in a network classifying animals, hidden layers might detect features like 'has fur', 'has four legs', while the output layer combines these to predict 'it's a cat'."
         }
     ]
 
@@ -236,27 +219,31 @@ def knowledge_quiz():
         st.markdown(f"<p class='sub-header'>Your score: {score}/{len(questions)}</p>", unsafe_allow_html=True)
         if score == len(questions):
             st.balloons()
-            st.markdown("<p class='content-text' style='color: green; font-weight: bold;'>Congratulations! You're a Bagging and Random Forest expert! 🏆</p>", unsafe_allow_html=True)
+            st.markdown("<p class='content-text' style='color: green; font-weight: bold;'>Congratulations! You're a neural network expert! 🏆</p>", unsafe_allow_html=True)
         elif score >= len(questions) // 2:
-            st.markdown("<p class='content-text' style='color: blue;'>Good job! You're on your way to mastering Bagging and Random Forest. Keep learning! 📚</p>", unsafe_allow_html=True)
+            st.markdown("<p class='content-text' style='color: blue;'>Good job! You're on your way to mastering neural networks. Keep learning! 📚</p>", unsafe_allow_html=True)
         else:
             st.markdown("<p class='content-text' style='color: orange;'>You're making progress! Review the explanations and try again to improve your score. 💪</p>", unsafe_allow_html=True)
 
-def conclusion():
-    st.markdown("<h2 class='sub-header'>Explore and Learn! 🚀</h2>", unsafe_allow_html=True)
-    st.markdown("""
-    <p class='content-text'>
-    Key takeaways from your exploration of Bagging and Random Forest:
+def main():
+    st.markdown("<h1 class='main-header'>🧠 Neural Network Forward Propagation Explorer 🧠</h1>", unsafe_allow_html=True)
+    st.markdown("<p class='content-text'><strong>Developed by: Venugopal Adep</strong></p>", unsafe_allow_html=True)
 
-    1. Both are ensemble methods combining multiple decision trees.
-    2. Random Forest's feature subsampling often leads to superior performance.
-    3. Increasing estimators generally improves model stability, with diminishing returns.
-    4. Choose between Bagging and Random Forest based on your specific dataset and problem.
-    5. Experiment with parameters to optimize model performance and decision boundaries.
+    configure_sidebar()
 
-    Continue exploring to build more robust and efficient machine learning models!
-    </p>
-    """, unsafe_allow_html=True)
+    tab1, tab2, tab3, tab4 = st.tabs(["🔍 Network Visualization", "🧮 Calculations", "📚 Learning Center", "🎓 Quiz"])
+
+    with tab1:
+        X, hidden_weights, hidden_bias, output_weights, output_bias, hidden_activation, output_activation = network_visualization()
+    
+    with tab2:
+        forward_propagation_calculations(X, hidden_weights, hidden_bias, output_weights, output_bias, hidden_activation, output_activation)
+    
+    with tab3:
+        learning_center()
+    
+    with tab4:
+        quiz()
 
 if __name__ == "__main__":
     main()
