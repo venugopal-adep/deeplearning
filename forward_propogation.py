@@ -113,3 +113,65 @@ st.subheader("Example")
 st.write("In this example, we randomly generate input data and weights for a simple neural network with one hidden layer.")
 st.write("You can adjust the number of input features, hidden neurons, output neurons, and the activation function using the sidebar controls.")
 st.write("The activations of the hidden layer and output layer are visualized using bar plots, where each bar represents the activation of a neuron in that layer.")
+
+# Quiz Section
+st.header("Neural Network Forward Propagation Quiz")
+st.write("Test your understanding of forward propagation in neural networks with these simple questions!")
+
+# Question 1
+st.subheader("Question 1: What is forward propagation?")
+q1_answer = st.checkbox("Click to reveal the answer", key="q1")
+if q1_answer:
+    st.write("""
+    **Answer:** Forward propagation is like passing a baton in a relay race through a neural network. 
+
+    - It starts with the input data (the first runner).
+    - The data moves through each layer of the network (like different runners in the race).
+    - At each layer, the data is transformed using weights and biases (like each runner's unique running style).
+    - Finally, it reaches the output layer (the finish line), giving us the network's prediction.
+
+    **Example:** Imagine you're using a neural network to recognize handwritten digits. The forward propagation takes the image of a digit (input), passes it through layers that detect features like lines and curves, and finally outputs a prediction of what digit it thinks the image represents.
+    """)
+
+# Question 2
+st.subheader("Question 2: What is an activation function, and why is it important?")
+q2_answer = st.checkbox("Click to reveal the answer", key="q2")
+if q2_answer:
+    st.write("""
+    **Answer:** An activation function is like a decision-maker in each neuron of the network. It determines whether and how strongly a neuron should "fire" based on its input.
+
+    Activation functions are important because:
+    1. They introduce non-linearity, allowing the network to learn complex patterns.
+    2. They help control the strength of the signal passing through the neuron.
+
+    **Example:** Think of a neuron as a light switch with a dimmer. The activation function decides:
+    - Whether to turn the light on (activate the neuron)
+    - How bright the light should be (strength of activation)
+
+    Without this, our neural network would just be doing simple linear calculations, like basic math, and couldn't learn complex patterns in data.
+    """)
+
+# Question 3
+st.subheader("Question 3: What's the difference between the sigmoid and softmax activation functions?")
+q3_answer = st.checkbox("Click to reveal the answer", key="q3")
+if q3_answer:
+    st.write("""
+    **Answer:** Sigmoid and softmax are both activation functions, but they serve different purposes:
+
+    **Sigmoid:**
+    - Like a personal score between 0 and 1
+    - Used for binary classification (yes/no decisions)
+    - Each neuron's output is independent of others
+
+    **Example:** Deciding if an email is spam (1) or not spam (0).
+
+    **Softmax:**
+    - Like splitting 100% among multiple choices
+    - Used for multi-class classification
+    - Outputs are probabilities that sum to 1 across all neurons
+
+    **Example:** Classifying an image as a cat, dog, or bird. Softmax might output: 
+      - Cat: 70%
+      - Dog: 20%
+      - Bird: 10%
+    """)
