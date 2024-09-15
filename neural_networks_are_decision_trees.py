@@ -79,6 +79,7 @@ def plot_classification(X, y, model_nn, model_tree):
 
 # Streamlit app
 st.title("Neural Networks as Decision Trees: An Interactive Exploration")
+st.write("**Developed by : Venugopal Adep**")
 st.write("Discover how complex neural networks can be understood as simple decision trees!")
 
 tab1, tab2, tab3 = st.tabs(["Introduction", "Regression Demo", "Classification Demo"])
