@@ -6,7 +6,7 @@ import numpy as np
 pygame.init()
 
 # Set up the display
-WIDTH, HEIGHT = 1200, 800
+WIDTH, HEIGHT = 1600, 900
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Interactive Activation Function Demo")
 
@@ -43,8 +43,8 @@ function_explanations = [
 current_function_index = 0
 
 # Graph settings
-graph_width = 800
-graph_height = 400
+graph_width = 1200
+graph_height = 600
 x_min, x_max = -10, 10
 y_min, y_max = -2, 2
 
